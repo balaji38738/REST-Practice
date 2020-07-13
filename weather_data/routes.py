@@ -15,10 +15,12 @@ from sqlalchemy import exc
 loop = asyncio.get_event_loop()
 
 class WeatherReport(Resource):
+
+    # Fetches data from url & returns response
     def put(self):
         zipcode = request.form["zip"]
         try:
-            response = requests.get(f"http://api.openweahermap.org/data/2.5/weather?zip={zipcode},in&appid={os.environ['apiid']}")
+            response = requests.get(f"http://api.openweathermap.org/data/2.5/weather?zip={zipcode},in&appid={os.environ['apiid']}")
             json_object = response.json()
             time = datetime.datetime.now()
             longitude = json_object['coord']['lon']
@@ -36,17 +38,20 @@ class WeatherReport(Resource):
                             }
             loop.run_until_complete(add_weather_data(weather_data))
             loop.close()
-            return make_response(json_object, 404)
+            return make_response(json_object)
         except requests.exceptions.RequestException as e:
             return make_response("RequestError")
 
 api.add_resource(WeatherReport, '/weather')
 
+# Takes a weather data dictionary & adds to csv file & database
 async def add_weather_data(weather_data):
     task1 = loop.create_task(insert_to_db(weather_data))
     task2 = loop.create_task(add_to_csv_file(weather_data))
     await asyncio.wait([task1, task2])
 
+
+# Takes a weather data dictionary & inserts to database
 async def insert_to_db(weather_data):
     new_entry = Weather(time=weather_data['time'], longitude=weather_data['longitude'], latitude=weather_data['latitude'],
                         description=weather_data['description'], temp_min=weather_data['temp_min'],
@@ -60,6 +65,8 @@ async def insert_to_db(weather_data):
     except exc.SQLAlchemyError as e:
         return e._message
 
+
+# Takes a weather data dictionary & adds to csv file
 async def add_to_csv_file(weather_data):
     with open('weather_report.csv', 'a', newline='') as file:
         writer = csv.writer(file)
