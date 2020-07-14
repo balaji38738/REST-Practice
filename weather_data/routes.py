@@ -7,7 +7,6 @@ import csv
 import os
 from weather_data import app
 import asyncio
-import csv
 from weather_data.models import Weather
 import datetime
 from sqlalchemy import exc
@@ -39,8 +38,14 @@ class WeatherReport(Resource):
             loop.run_until_complete(add_weather_data(weather_data))
             loop.close()
             return make_response(json_object)
-        except requests.exceptions.RequestException as e:
-            return make_response("RequestError")
+        except requests.ConnectionError as error:
+            return make_response("Error in connecting with url")
+        except requests.URLRequired as error:
+            return make_response("Invalid url")
+        except requests.ReadTimeout as error:
+            return make_response("The server did not send any data in the allotted amount of time")
+        except KeyError as error:
+            return make_response("Invalid key for dictionary")
 
 api.add_resource(WeatherReport, '/weather')
 
