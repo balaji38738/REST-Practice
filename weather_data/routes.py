@@ -51,7 +51,7 @@ api.add_resource(WeatherReport, '/weather')
 
 # Takes a weather data dictionary & adds to csv file & database
 async def add_weather_data(weather_data):
-    task1 = loop.create_task(insert_to_db(weather_data))
+    task1 = loop.create_task(insert_to_db(weather_data, ))
     task2 = loop.create_task(add_to_csv_file(weather_data))
     await asyncio.wait([task1, task2])
 
@@ -79,4 +79,3 @@ async def add_to_csv_file(weather_data):
             writer.writerow(list(weather_data.keys()))
         writer.writerow(list(weather_data.values()))
         await asyncio.sleep(2)
-
